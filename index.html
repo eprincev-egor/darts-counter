@@ -1,0 +1,143 @@
+<meta charset="utf-8"/>
+
+<textarea id="names"></textarea>
+<div id="currentName"></div>
+<div><br/></div>
+
+<input id="number"/> <b id="fast-remain">301</b>
+<div><br/></div>
+
+<button id="send">score</button>
+<div><br/></div>
+<div><br/></div>
+
+<div id="grid"></div>
+<script>
+if ( localStorage.getItem("names") ) {
+	document.getElementById("names").value = localStorage.getItem("names");
+}
+
+var names = [];
+var scores = [];
+var currentPlayer = 0;
+var index = 0;
+
+function drawGrid() {
+	var html = ["<table>"];
+	var remains = [];
+	
+	// head
+	var name;
+	html.push("<thead><tr>");
+	for (var i=0, n=names.length; i<n; i++) {
+		name = names[i];
+		html.push("<td>"+ name +"</td>");
+		remains[i] = 301;
+	}
+	html.push("</tr></thead>");
+	
+	// body
+	html.push("<tbody>");
+	var row, score;
+	for (var y=0, m=scores.length; y<m; y++) {
+		row = scores[y];
+		
+		html.push("<tr>");
+		for (var i=0, n=names.length; i<n; i++) {
+			score = +row[i] || 0;
+			remains[i] -= score;
+			if ( remains[i] < 0 ) {
+				remains[i] += score;
+				score = "*" + score;
+			}
+			
+			html.push("<td>"+ score +"</td>");
+		}
+		html.push("</tr>");
+	}
+	html.push("</tbody>");
+	
+	// remains
+	html.push("<tr>");
+	for (var i=0, n=remains.length; i<n; i++) {
+		score = remains[i];
+		html.push("<td><b>"+ score +"</b></td>");
+	}
+	html.push("</tr>");
+	
+	
+	html.push("</table>");
+	document.getElementById("grid").innerHTML = html.join("");
+	
+	
+	document.getElementById("currentName").innerHTML = "кидает: " + names[currentPlayer];
+}
+
+var up = function() {
+	names = document.getElementById("names").value;
+	
+	localStorage.setItem("names", names);
+	names = names.split(/\s+/);
+	names = names.filter(function(name) {return !!name});
+	
+	var score = document.getElementById("number").value || "0";
+	try {
+		score = +eval(score);
+	} catch(e) {
+		alert("error");
+		console.error(e);
+		return;
+	}
+	document.getElementById("number").value = "";
+	
+	if ( !scores[index] ) {
+		scores[index] = [];
+	}
+	
+	scores[index][currentPlayer] = score;
+	currentPlayer++;
+	
+	if ( currentPlayer >= names.length ) {
+		currentPlayer = 0;
+		index++;
+	}
+	
+	drawGrid();
+	document.getElementById("number").focus();
+};
+
+
+document.getElementById("send").onclick = up;
+
+document.getElementById("number").onkeyup = function(e) {
+	if ( e.keyCode == 13 ) {
+		up();
+	}
+	showFastRemain(document.getElementById("fast-remain"));
+}
+
+function showFastRemain(el) {
+	value = document.getElementById("number").value;
+	
+	var summValue = 0;
+	try {
+		summValue = +eval(value) || 0;
+	}catch(e){}
+	
+	var summ = 0, score;
+	for (var i=0, n=scores.length; i<n; i++) {
+		score = scores[i][currentPlayer];
+		score = score || 0;
+		
+		summ += score;
+		if ( summ > 301 ) {
+			summ -= score;
+		}
+	}
+	summ = summ || 0;
+	
+	var remain = 301 - summ - summValue;
+	el.innerHTML = remain;
+}
+
+</script>
